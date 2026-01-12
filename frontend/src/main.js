@@ -327,7 +327,7 @@ document.getElementById('form-notas').addEventListener('submit', async (e) => {
 
 window.limpiarFormNotas = () => {
     document.getElementById('form-notas').reset();
-}onst API = 'https://proyecto-final-de-desarrollo.onrender.com';
+}onst API = 'https://proyecto-final2026.onrender.com';
 
 // Elementos Globales
 const loginSection = document.getElementById('login-section');
