@@ -1,16 +1,25 @@
-document.addEventListener("DOMContentLoaded", () => {
+
 
   // ==============================
   // CONFIGURACIÓN GLOBAL
   // ==============================
-  import.meta.env
+  
+  document.addEventListener("DOMContentLoaded", () => {
 
-  const API = import.meta.env.VITE_API_URL;
+    // ==============================
+    // CONFIGURACIÓN GLOBAL
+    // ==============================
+    console.log("API =", import.meta.env.VITE_API_URL);
+    const API = import.meta.env.VITE_API_URL;
 
-  if (!API) {
-    console.error("❌ VITE_API_URL no está definida");
-    return;
-  }
+    if (!API) {
+        console.error("❌ VITE_API_URL no está definida");
+        return;
+    }
+
+    // ... resto de tu código
+});
+
 
   const loginSection = document.getElementById('login-section');
   const dashboardSection = document.getElementById('dashboard-section');
@@ -228,4 +237,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-});
+
