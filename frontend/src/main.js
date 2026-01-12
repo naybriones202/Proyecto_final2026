@@ -1,13 +1,16 @@
 // Importaciones locales (Vite las gestionará)
+// Importaciones de librerías locales
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Swal from 'sweetalert2';
 
+// Configuración global
 window.Swal = Swal;
 
 const API = "https://proyecto-final2026.onrender.com";
 console.log("API conectada:", API);
+
 document.addEventListener("DOMContentLoaded", () => {
 
   // ==============================
