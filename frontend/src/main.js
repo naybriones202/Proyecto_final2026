@@ -3,8 +3,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Swal from 'sweetalert2';
 
-// Cambia la línea 10 de tu main.js por esto solo para probar:
-// Reemplaza las líneas 7-12 por esto:
+// URL del backend en Render
 const API = 'https://proyecto-final2026.onrender.com';
 console.log("🔗 Conectando a:", API);
 
@@ -12,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginSection = document.getElementById('login-section');
     const dashboardSection = document.getElementById('dashboard-section');
 
-    // === LOGIN ===
+    // === LÓGICA DE LOGIN ===
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
         formLogin.addEventListener('submit', async (e) => {
@@ -30,12 +29,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.msg || 'Error en login');
 
-                Swal.fire({ icon: 'success', title: 'Bienvenido', text: data.usuario.nombre, timer: 1500, showConfirmButton: false });
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Bienvenido', 
+                    text: data.usuario.nombre, 
+                    timer: 1500, 
+                    showConfirmButton: false 
+                });
 
+                // Actualizar Interfaz
                 document.getElementById('usuario-logueado').innerText = data.usuario.nombre;
                 loginSection.classList.replace('d-flex', 'oculto');
                 dashboardSection.classList.remove('oculto');
-                mostrarPanel('usuarios');
+                
+                // Cargar panel inicial
+                window.mostrarPanel('usuarios');
 
             } catch (error) {
                 Swal.fire('Error', error.message, 'error');
@@ -43,19 +51,36 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // === BOTÓN CERRAR SESIÓN ===
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => location.reload());
+    }
+
     // === NAVEGACIÓN GLOBAL ===
     window.mostrarPanel = (panel) => {
-        ['usuarios', 'materias', 'estudiantes', 'notas'].forEach(p => {
-            document.getElementById(`panel-${p}`)?.classList.add('oculto');
+        const secciones = ['usuarios', 'materias', 'estudiantes', 'notas'];
+        secciones.forEach(p => {
+            const el = document.getElementById(`panel-${p}`);
+            if (el) el.classList.add('oculto');
         });
-        document.getElementById(`panel-${panel}`)?.classList.remove('oculto');
-        
-        const titulos = { usuarios: 'Usuarios', materias: 'Materias', estudiantes: 'Estudiantes', notas: 'Notas' };
-        document.getElementById('titulo-seccion').innerText = titulos[panel];
 
+        const panelActivo = document.getElementById(`panel-${panel}`);
+        if (panelActivo) panelActivo.classList.remove('oculto');
+        
+        const titulos = { 
+            usuarios: 'Gestión de Usuarios', 
+            materias: 'Gestión de Materias', 
+            estudiantes: 'Directorio de Estudiantes', 
+            notas: 'Registro de Notas' 
+        };
+        document.getElementById('titulo-seccion').innerText = titulos[panel] || 'Panel';
+
+        // Carga de datos según la sección
         if (panel === 'usuarios') cargarUsuarios();
     };
 
+    // === CRUD DE USUARIOS ===
     window.cargarUsuarios = async () => {
         try {
             const res = await fetch(`${API}/usuarios`);
@@ -68,8 +93,39 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>#${u.id}</td>
                     <td>${u.cedula}</td>
                     <td>${u.nombre}</td>
-                    <td><button class="btn btn-sm btn-danger" onclick="borrarUsuario('${u.id}')">🗑</button></td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="borrarUsuario('${u.id}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
                 </tr>`).join('');
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error("Error al cargar usuarios:", err); 
+        }
+    };
+
+    window.borrarUsuario = async (id) => {
+        const confirmacion = await Swal.fire({
+            title: '¿Estás seguro?',
+            text: "No podrás revertir esta acción",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (confirmacion.isConfirmed) {
+            try {
+                const res = await fetch(`${API}/usuarios/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    Swal.fire('Eliminado', 'El usuario ha sido borrado', 'success');
+                    cargarUsuarios();
+                }
+            } catch (err) {
+                Swal.fire('Error', 'No se pudo eliminar el usuario', 'error');
+            }
+        }
     };
 });
