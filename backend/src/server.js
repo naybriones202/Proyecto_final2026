@@ -6,28 +6,23 @@ import { pool } from './db.js'
 
 const app = express()
 
-// ✅ CONFIGURACIÓN DE CORS MEJORADA
-// Permitimos que el frontend envíe JSON y acceda a los recursos
+// ✅ CORS: Permitimos el acceso desde cualquier origen
 app.use(cors({
-  origin: '*', // Permite peticiones desde cualquier lugar (incluyendo tu local y Render)
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json())
 
-// Ruta de verificación (Útil para que Render sepa que el servicio está vivo)
+// Ruta de salud para Render
 app.get('/', (req, res) => {
-  res.json({ 
-    status: 'API Funcionando 🚀', 
-    proyecto: 'Proyecto Final 2026',
-    database: 'Conectada ✅' 
-  })
+  res.json({ status: 'API Online 🚀', database: 'Conectada ✅' })
 })
 
-// ======================
-// LOGIN (Optimizado para evitar el 401 genérico)
-// ======================
+// ==========================================
+// 🔐 AUTENTICACIÓN
+// ==========================================
 app.post('/login', async (req, res) => {
   try {
     const { cedula, clave } = req.body
@@ -35,7 +30,6 @@ app.post('/login', async (req, res) => {
 
     const result = await pool.query('SELECT * FROM usuarios WHERE cedula = $1', [cedula])
     
-    // Si el usuario no existe, enviamos un 401 con mensaje claro
     if (result.rows.length === 0) {
       return res.status(401).json({ msg: 'La cédula no está registrada' })
     }
@@ -43,12 +37,8 @@ app.post('/login', async (req, res) => {
     const usuario = result.rows[0]
     const match = await bcrypt.compare(clave, usuario.clave)
     
-    // Si la contraseña no coincide, enviamos un 401
-    if (!match) {
-      return res.status(401).json({ msg: 'Contraseña incorrecta' })
-    }
+    if (!match) return res.status(401).json({ msg: 'Contraseña incorrecta' })
 
-    // Respuesta exitosa
     res.json({ 
       usuario: { id: usuario.id, nombre: usuario.nombre, cedula: usuario.cedula },
       msg: 'Login exitoso'
@@ -59,20 +49,74 @@ app.post('/login', async (req, res) => {
   }
 })
 
-// ======================
-// RESTO DE RUTAS (USUARIOS, MATERIAS, ESTUDIANTES, NOTAS)
-// ======================
+// ==========================================
+// 👥 USUARIOS
+// ==========================================
+app.get('/usuarios', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, cedula, nombre FROM usuarios ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-// [Tus rutas CRUD de Usuarios, Materias, Estudiantes y Notas se mantienen igual...]
-// Solo asegúrate de envolverlas en try/catch como hice en el login para evitar que el servidor se caiga.
+app.delete('/usuarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
+    res.json({ msg: 'Usuario eliminado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-// ======================
-// INICIO DEL SERVIDOR (CRÍTICO PARA RENDER)
-// ======================
-// Render asigna un puerto automáticamente. NO uses solo 3000.
+// ==========================================
+// 📚 MATERIAS
+// ==========================================
+app.get('/materias', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM materias ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// 🎓 ESTUDIANTES
+// ==========================================
+app.get('/estudiantes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM estudiantes ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// 📝 NOTAS (Con JOIN para ver nombres)
+// ==========================================
+app.get('/notas', async (req, res) => {
+  try {
+    const sql = `
+      SELECT n.id, e.nombre as estudiante, m.nombre as materia, n.nota 
+      FROM notas n
+      JOIN estudiantes e ON n.estudiante_id = e.id
+      JOIN materias m ON n.materia_id = m.id
+      ORDER BY n.id ASC`;
+    const result = await pool.query(sql);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// 🚀 INICIO DEL SERVIDOR
+// ==========================================
 const PORT = process.env.PORT || 3000
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor activo en puerto: ${PORT}`)
 })
-
