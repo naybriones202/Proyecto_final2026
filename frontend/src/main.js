@@ -3,21 +3,29 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Swal from 'sweetalert2';
 
-// URL del backend en Render
+// URL del backend
 const API = 'https://proyecto-final2026.onrender.com';
 console.log("🔗 Conectando a:", API);
 
 document.addEventListener("DOMContentLoaded", () => {
+
     const loginSection = document.getElementById('login-section');
     const dashboardSection = document.getElementById('dashboard-section');
 
-    // === LÓGICA DE LOGIN ===
+    // ======================
+    // LOGIN
+    // ======================
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
         formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const cedula = document.getElementById('login-cedula').value;
-            const clave = document.getElementById('login-clave').value;
+            const cedula = document.getElementById('login-cedula').value.trim();
+            const clave = document.getElementById('login-clave').value.trim();
+
+            if (!cedula || !clave) {
+                Swal.fire('Error', 'Ingrese cédula y contraseña', 'warning');
+                return;
+            }
 
             try {
                 const res = await fetch(`${API}/login`, {
@@ -27,23 +35,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.msg || 'Error en login');
 
-                Swal.fire({ 
-                    icon: 'success', 
-                    title: 'Bienvenido', 
-                    text: data.usuario.nombre, 
-                    timer: 1500, 
-                    showConfirmButton: false 
+                if (!res.ok) throw new Error(data.msg || 'Usuario o contraseña incorrecta');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Bienvenido',
+                    text: data.usuario.nombre,
+                    timer: 1500,
+                    showConfirmButton: false
                 });
 
-                // Actualizar Interfaz
+                // Guardar usuario en sesión (opcional)
+                localStorage.setItem('usuario', JSON.stringify(data.usuario));
+
+                // Cambiar interfaz
+                if (loginSection) loginSection.classList.add('oculto');
+                if (dashboardSection) dashboardSection.classList.remove('oculto');
                 document.getElementById('usuario-logueado').innerText = data.usuario.nombre;
-                loginSection.classList.replace('d-flex', 'oculto');
-                dashboardSection.classList.remove('oculto');
-                
+
                 // Cargar panel inicial
-                window.mostrarPanel('usuarios');
+                mostrarPanel('usuarios');
 
             } catch (error) {
                 Swal.fire('Error', error.message, 'error');
@@ -51,13 +63,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // === BOTÓN CERRAR SESIÓN ===
+    // ======================
+    // LOGOUT
+    // ======================
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
-        btnLogout.addEventListener('click', () => location.reload());
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('usuario');
+            location.reload();
+        });
     }
 
-    // === NAVEGACIÓN GLOBAL ===
+    // ======================
+    // NAVEGACIÓN ENTRE PANELES
+    // ======================
     window.mostrarPanel = (panel) => {
         const secciones = ['usuarios', 'materias', 'estudiantes', 'notas'];
         secciones.forEach(p => {
@@ -67,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const panelActivo = document.getElementById(`panel-${panel}`);
         if (panelActivo) panelActivo.classList.remove('oculto');
-        
+
         const titulos = { 
             usuarios: 'Gestión de Usuarios', 
             materias: 'Gestión de Materias', 
@@ -76,11 +95,16 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         document.getElementById('titulo-seccion').innerText = titulos[panel] || 'Panel';
 
-        // Carga de datos según la sección
+        // Cargar datos según sección
         if (panel === 'usuarios') cargarUsuarios();
+        if (panel === 'materias') cargarMaterias();
+        if (panel === 'estudiantes') cargarEstudiantes();
+        if (panel === 'notas') cargarNotas();
     };
 
-    // === CRUD DE USUARIOS ===
+    // ======================
+    // USUARIOS CRUD
+    // ======================
     window.cargarUsuarios = async () => {
         try {
             const res = await fetch(`${API}/usuarios`);
@@ -94,13 +118,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${u.cedula}</td>
                     <td>${u.nombre}</td>
                     <td>
-                        <button class="btn btn-sm btn-danger" onclick="borrarUsuario('${u.id}')">
+                        <button class="btn btn-sm btn-danger" onclick="borrarUsuario(${u.id})">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
-                </tr>`).join('');
-        } catch (err) { 
-            console.error("Error al cargar usuarios:", err); 
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("Error al cargar usuarios:", err);
         }
     };
 
@@ -122,10 +147,81 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (res.ok) {
                     Swal.fire('Eliminado', 'El usuario ha sido borrado', 'success');
                     cargarUsuarios();
+                } else {
+                    const data = await res.json();
+                    Swal.fire('Error', data.error || 'No se pudo eliminar', 'error');
                 }
             } catch (err) {
                 Swal.fire('Error', 'No se pudo eliminar el usuario', 'error');
             }
         }
     };
+
+    // ======================
+    // MATERIAS CRUD
+    // ======================
+    window.cargarMaterias = async () => {
+        try {
+            const res = await fetch(`${API}/materias`);
+            const materias = await res.json();
+            const tabla = document.getElementById('tabla-materias-body');
+            if (!tabla) return;
+
+            tabla.innerHTML = materias.map(m => `
+                <tr>
+                    <td>#${m.id}</td>
+                    <td>${m.codigo}</td>
+                    <td>${m.nombre}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("Error al cargar materias:", err);
+        }
+    };
+
+    // ======================
+    // ESTUDIANTES CRUD
+    // ======================
+    window.cargarEstudiantes = async () => {
+        try {
+            const res = await fetch(`${API}/estudiantes`);
+            const estudiantes = await res.json();
+            const tabla = document.getElementById('tabla-estudiantes-body');
+            if (!tabla) return;
+
+            tabla.innerHTML = estudiantes.map(e => `
+                <tr>
+                    <td>#${e.id}</td>
+                    <td>${e.cedula}</td>
+                    <td>${e.nombre}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("Error al cargar estudiantes:", err);
+        }
+    };
+
+    // ======================
+    // NOTAS
+    // ======================
+    window.cargarNotas = async () => {
+        try {
+            const res = await fetch(`${API}/notas`);
+            const notas = await res.json();
+            const tabla = document.getElementById('tabla-notas-body');
+            if (!tabla) return;
+
+            tabla.innerHTML = notas.map(n => `
+                <tr>
+                    <td>#${n.id}</td>
+                    <td>${n.estudiante}</td>
+                    <td>${n.materia}</td>
+                    <td>${n.nota}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("Error al cargar notas:", err);
+        }
+    };
+
 });
