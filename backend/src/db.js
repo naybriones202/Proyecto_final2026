@@ -1,30 +1,30 @@
 import pkg from 'pg';
 const { Pool } = pkg;
-import 'dotenv/config'; // ✅ Esto debe estar arriba de todo
+import 'dotenv/config';
 
-const isProduction = process.env.NODE_ENV === 'production';
-const dbUrl = process.env.DATABASE_URL || ""; // ✅ Evita que sea undefined
+const dbUrl = process.env.DATABASE_URL;
 
+// ✅ Configuración simplificada y altamente compatible con Render/Supabase
 export const pool = new Pool({
   connectionString: dbUrl,
-  ssl: isProduction 
+  ssl: dbUrl && dbUrl.includes('supabase.com') 
     ? { rejectUnauthorized: false } 
-    : (dbUrl.includes('supabase.com') ? { rejectUnauthorized: false } : false),
+    : false
 });
 
 // Verificación de conexión
 if (!dbUrl) {
-  console.error('❌ ERROR: La variable DATABASE_URL no está definida en el archivo .env');
+  console.error('❌ ERROR: DATABASE_URL no encontrada en las variables de entorno.');
 } else {
   pool.connect((err, client, release) => {
     if (err) {
       return console.error('❌ Error de conexión a la DB:', err.stack);
     }
-    console.log('✅ Conexión a PostgreSQL exitosa');
+    console.log('✅ Conexión a PostgreSQL (Supabase) exitosa');
     release();
   });
 }
 
 pool.on('error', (err) => {
-  console.error('⚠️ Error en el pool:', err);
+  console.error('⚠️ Error inesperado en el pool de clientes:', err);
 });
