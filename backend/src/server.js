@@ -11,13 +11,13 @@ const app = express()
 // ==========================================
 app.use(cors({
   origin: [
-    'http://localhost:5173',
-    'https://proyecto-final2026.vercel.app'
+    'http://localhost:5173', // Para pruebas locales
+    'https://proyecto-final2026.vercel.app', // Tu frontend en producción
+    'http://127.0.0.1:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
-}))
-
+}));
 app.use(express.json())
 
 // ==========================================
