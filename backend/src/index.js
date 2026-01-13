@@ -4,7 +4,7 @@ import path from "path";
 const app = express();
 const __dirname = path.resolve();
 
-// Servir frontend
+// 👉 AQUÍ ESTABA TU ERROR
 app.use(express.static(path.join(__dirname, "dist")));
 
 app.get("*", (req, res) => {
@@ -14,4 +14,5 @@ app.get("*", (req, res) => {
 app.listen(10000, () => {
   console.log("Servidor activo en puerto 10000");
 });
+
 
