@@ -10,8 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginSection = document.getElementById('login-section');
   const dashboardSection = document.getElementById('dashboard-section');
 
-  // ✅ PERSISTENCIA DE SESIÓN
-  // Si ya hay un usuario en localStorage, saltamos el login
+  // --- PERSISTENCIA DE SESIÓN ---
   const usuarioGuardado = localStorage.getItem('usuario');
   if (usuarioGuardado) {
     const user = JSON.parse(usuarioGuardado);
@@ -21,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarPanel('usuarios');
   }
 
-  // LOGIN
+  // --- LOGIN ---
   const formLogin = document.getElementById('form-login');
   formLogin?.addEventListener('submit', async e => {
     e.preventDefault();
@@ -30,8 +29,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     if (!cedula || !clave) return Swal.fire('Error', 'Ingrese cédula y contraseña', 'warning');
 
-    // Mostrar indicador de carga (útil para el despertar lento de Render)
-    Swal.fire({ title: 'Verificando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ 
+      title: 'Verificando...', 
+      text: 'Conectando con el servidor (esto puede tardar si el servidor está dormido)',
+      allowOutsideClick: false, 
+      didOpen: () => Swal.showLoading() 
+    });
 
     try {
       const res = await fetch(`${API}/login`, {
@@ -43,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
 
       if (!res.ok) {
-        // Si el servidor responde 401, el error viene aquí
         throw new Error(data.msg || 'Credenciales incorrectas');
       }
 
@@ -56,19 +58,18 @@ document.addEventListener("DOMContentLoaded", () => {
       mostrarPanel('usuarios');
 
     } catch (error) {
-      // ✅ Aquí capturamos el 401 y lo mostramos bonito
       Swal.fire('Error de Autenticación', error.message, 'error');
     }
   });
 
-  // LOGOUT
+  // --- LOGOUT ---
   document.getElementById('btn-logout')?.addEventListener('click', () => {
     localStorage.removeItem('usuario');
     location.reload();
   });
 
-  // PANEL
-  window.mostrarPanel = panel => {
+  // --- GESTIÓN DE PANELES ---
+  window.mostrarPanel = (panel) => {
     const secciones = ['usuarios','materias','estudiantes','notas'];
     secciones.forEach(p => {
       const el = document.getElementById(`panel-${p}`);
@@ -88,10 +89,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const tituloDoc = document.getElementById('titulo-seccion');
     if (tituloDoc) tituloDoc.innerText = titulos[panel] || 'Panel';
 
-    if(panel==='usuarios') cargarUsuarios();
-    if(panel==='materias') cargarMaterias();
-    if(panel==='estudiantes') cargarEstudiantes();
-    if(panel==='notas') cargarNotas();
+    // Carga de datos según el panel
+    if(panel === 'usuarios') cargarUsuarios();
+    if(panel === 'materias') cargarMaterias();
+    if(panel === 'estudiantes') cargarEstudiantes();
+    if(panel === 'notas') cargarNotas();
   }
 
   // --- CRUD FUNCTIONS ---
@@ -101,28 +103,84 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!tabla) return;
     try {
       const res = await fetch(`${API}/usuarios`);
-      if (res.status === 401) return manejarSesionExpirada();
       const usuarios = await res.json();
       tabla.innerHTML = usuarios.map(u => `
         <tr>
           <td>#${u.id}</td>
           <td>${u.cedula}</td>
           <td>${u.nombre}</td>
-          <td>
+          <td class="text-center">
             <button class="btn btn-sm btn-danger" onclick="borrarUsuario(${u.id})">
               <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>`).join('');
-    } catch (err) { console.error("Error cargando usuarios:", err); }
+    } catch (err) { console.error("Error:", err); }
   }
 
-  // ✅ Función extra para manejar errores de autorización globales
-  function manejarSesionExpirada() {
-    localStorage.removeItem('usuario');
-    Swal.fire('Sesión Expirada', 'Por favor inicia sesión de nuevo', 'info')
-      .then(() => location.reload());
+  window.cargarMaterias = async () => {
+    const tabla = document.getElementById('tabla-materias-body');
+    if (!tabla) return;
+    try {
+      const res = await fetch(`${API}/materias`);
+      const materias = await res.json();
+      tabla.innerHTML = materias.map(m => `
+        <tr>
+          <td>#${m.id}</td>
+          <td><span class="badge bg-secondary">${m.codigo}</span></td>
+          <td>${m.nombre}</td>
+        </tr>`).join('');
+    } catch (err) { console.error("Error:", err); }
   }
 
-  // ... (El resto de tus funciones cargarMaterias, cargarEstudiantes, etc. se mantienen igual)
+  window.cargarEstudiantes = async () => {
+    const tabla = document.getElementById('tabla-estudiantes-body');
+    if (!tabla) return;
+    try {
+      const res = await fetch(`${API}/estudiantes`);
+      const estudiantes = await res.json();
+      tabla.innerHTML = estudiantes.map(e => `
+        <tr>
+          <td>#${e.id}</td>
+          <td>${e.cedula}</td>
+          <td>${e.nombre}</td>
+        </tr>`).join('');
+    } catch (err) { console.error("Error:", err); }
+  }
+
+  window.cargarNotas = async () => {
+    const tabla = document.getElementById('tabla-notas-body');
+    if (!tabla) return;
+    try {
+      const res = await fetch(`${API}/notas`);
+      const notas = await res.json();
+      tabla.innerHTML = notas.map(n => `
+        <tr>
+          <td>#${n.id}</td>
+          <td>${n.estudiante}</td>
+          <td>${n.materia}</td>
+          <td><strong class="${n.nota >= 7 ? 'text-success' : 'text-danger'}">${n.nota}</strong></td>
+        </tr>`).join('');
+    } catch (err) { console.error("Error:", err); }
+  }
+
+  window.borrarUsuario = async (id) => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "No podrás revertir esto",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, borrar'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await fetch(`${API}/usuarios/${id}`, { method: 'DELETE' });
+        Swal.fire('Eliminado', 'El usuario ha sido borrado', 'success');
+        cargarUsuarios();
+      } catch (err) { Swal.fire('Error', 'No se pudo eliminar', 'error'); }
+    }
+  }
 });
