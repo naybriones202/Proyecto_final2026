@@ -3,8 +3,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Swal from 'sweetalert2';
 
-// La variable se carga desde el entorno de Render o archivo .env
-const API = import.meta.env.VITE_API_URL;
+// Cambia la línea 10 de tu main.js por esto solo para probar:
+const API = import.meta.env.VITE_API_URL || 'https://proyecto-final2026.onrender.com';
 
 if (!API) {
     console.error("❌ Error: VITE_API_URL no definida.");
