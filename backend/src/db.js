@@ -1,28 +1,30 @@
 import pkg from 'pg';
 const { Pool } = pkg;
-import 'dotenv/config'; // Aseguramos que cargue las variables si se llama por separado
+import 'dotenv/config'; // ✅ Esto debe estar arriba de todo
 
 const isProduction = process.env.NODE_ENV === 'production';
+const dbUrl = process.env.DATABASE_URL || ""; // ✅ Evita que sea undefined
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Supabase requiere SSL para conexiones externas. 
-  // En Render (producción) es obligatorio. En local, depende de tu config.
+  connectionString: dbUrl,
   ssl: isProduction 
     ? { rejectUnauthorized: false } 
-    : (process.env.DATABASE_URL.includes('supabase.com') ? { rejectUnauthorized: false } : false),
+    : (dbUrl.includes('supabase.com') ? { rejectUnauthorized: false } : false),
 });
 
-// Verificación de conexión inicial
-pool.connect((err, client, release) => {
-  if (err) {
-    return console.error('❌ Error adquiriendo el cliente:', err.stack);
-  }
-  console.log('✅ Conexión a PostgreSQL (Supabase) exitosa');
-  release();
-});
+// Verificación de conexión
+if (!dbUrl) {
+  console.error('❌ ERROR: La variable DATABASE_URL no está definida en el archivo .env');
+} else {
+  pool.connect((err, client, release) => {
+    if (err) {
+      return console.error('❌ Error de conexión a la DB:', err.stack);
+    }
+    console.log('✅ Conexión a PostgreSQL exitosa');
+    release();
+  });
+}
 
-// Manejo de errores en clientes inactivos
 pool.on('error', (err) => {
-  console.error('⚠️ Error inesperado en el pool de la DB:', err);
+  console.error('⚠️ Error en el pool:', err);
 });
