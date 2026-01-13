@@ -75,15 +75,15 @@ app.get('/materias', async (req, res) => {
   res.json(result.rows)
 })
 
+// Ejemplo de ajuste en server.js para la nueva tabla materias
 app.post('/materias', async (req, res) => {
-  const { nombre, descripcion } = req.body
+  const { codigo, nombre } = req.body; // Asegúrate de recibir 'codigo'
   const result = await pool.query(
-    'INSERT INTO materias (nombre, descripcion) VALUES ($1, $2) RETURNING *',
-    [nombre, descripcion]
-  )
-  res.json(result.rows[0])
-})
-
+    'INSERT INTO materias (codigo, nombre) VALUES ($1, $2) RETURNING *',
+    [codigo, nombre]
+  );
+  res.json(result.rows[0]);
+});
 // ==========================================
 // 🎓 SECCIÓN: ESTUDIANTES
 // ==========================================
