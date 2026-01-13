@@ -12,19 +12,17 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS: Permitimos el acceso desde cualquier origen
+// ✅ Configuración CORS
 app.use(cors({
-  origin: '*', 
+  origin: '*',
   methods: ['GET','POST','PUT','DELETE'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
 
 app.use(express.json());
 
-// ======================
-// 🔹 SERVIR FRONTEND
-// ======================
-app.use(express.static(path.join(__dirname, 'dist'))); // cambiar 'dist' según tu build de Vite
+// 🔹 Servir frontend
+app.use(express.static(path.join(__dirname, 'dist'))); // 'dist' si usas Vite
 
 // ======================
 // 🔹 RUTAS API
@@ -35,7 +33,9 @@ app.get('/api', (req,res) => {
   res.json({ status: 'API Online 🚀', database: 'Conectada ✅' });
 });
 
-// AUTENTICACIÓN
+// ==========================================
+// 🔐 LOGIN
+// ==========================================
 app.post('/api/login', async (req,res) => {
   try {
     const { cedula, clave } = req.body;
@@ -50,16 +50,32 @@ app.post('/api/login', async (req,res) => {
 
     res.json({ usuario: { id: usuario.id, nombre: usuario.nombre, cedula: usuario.cedula } });
   } catch (err) {
-    console.error(err);
+    console.error('Error login:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-// USUARIOS CRUD
+// ==========================================
+// 👥 USUARIOS CRUD
+// ==========================================
 app.get('/api/usuarios', async (req,res) => {
   try {
     const result = await pool.query('SELECT id, cedula, nombre FROM usuarios ORDER BY id ASC');
     res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/usuarios', async (req,res) => {
+  try {
+    const { cedula, nombre, clave } = req.body;
+    if (!cedula || !nombre || !clave) return res.status(400).json({ msg: 'Datos incompletos' });
+
+    const hash = await bcrypt.hash(clave, 10);
+    const result = await pool.query(
+      'INSERT INTO usuarios (cedula, nombre, clave) VALUES ($1, $2, $3) RETURNING id, cedula, nombre',
+      [cedula, nombre, hash]
+    );
+    res.status(201).json(result.rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -71,7 +87,9 @@ app.delete('/api/usuarios/:id', async (req,res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// MATERIAS
+// ==========================================
+// 📚 MATERIAS CRUD
+// ==========================================
 app.get('/api/materias', async (req,res) => {
   try {
     const result = await pool.query('SELECT * FROM materias ORDER BY id ASC');
@@ -79,7 +97,22 @@ app.get('/api/materias', async (req,res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ESTUDIANTES
+app.post('/api/materias', async (req,res) => {
+  try {
+    const { codigo, nombre } = req.body;
+    if (!codigo || !nombre) return res.status(400).json({ msg: 'Datos incompletos' });
+
+    const result = await pool.query(
+      'INSERT INTO materias (codigo, nombre) VALUES ($1, $2) RETURNING *',
+      [codigo, nombre]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==========================================
+// 🎓 ESTUDIANTES CRUD
+// ==========================================
 app.get('/api/estudiantes', async (req,res) => {
   try {
     const result = await pool.query('SELECT * FROM estudiantes ORDER BY id ASC');
@@ -87,7 +120,22 @@ app.get('/api/estudiantes', async (req,res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// NOTAS
+app.post('/api/estudiantes', async (req,res) => {
+  try {
+    const { cedula, nombre } = req.body;
+    if (!cedula || !nombre) return res.status(400).json({ msg: 'Datos incompletos' });
+
+    const result = await pool.query(
+      'INSERT INTO estudiantes (cedula, nombre) VALUES ($1, $2) RETURNING *',
+      [cedula, nombre]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==========================================
+// 📝 NOTAS CRUD
+// ==========================================
 app.get('/api/notas', async (req,res) => {
   try {
     const sql = `
@@ -95,22 +143,23 @@ app.get('/api/notas', async (req,res) => {
       FROM notas n
       JOIN estudiantes e ON n.estudiante_id = e.id
       JOIN materias m ON n.materia_id = m.id
-      ORDER BY n.id ASC`;
+      ORDER BY n.id ASC
+    `;
     const result = await pool.query(sql);
     res.json(result.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ======================
-// 🔹 CUALQUIER OTRA RUTA -> INDEX
-// ======================
+// ==========================================
+// 🔹 CUALQUIER OTRA RUTA -> FRONTEND
+// ==========================================
 app.get('*', (req,res) => {
-  res.sendFile(path.join(__dirname,'dist/index.html'));
+  res.sendFile(path.join(__dirname, 'dist/index.html'));
 });
 
-// ======================
+// ==========================================
 // 🚀 INICIO SERVIDOR
-// ======================
+// ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor activo en puerto ${PORT}`);
