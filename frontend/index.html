@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Proyecto-Briones</title>
+  <title>Sistema Académico - Briones 2026</title>
   <link rel="icon" href="/vite.svg" />
   <style>
     .oculto { display: none !important; }
@@ -18,11 +18,17 @@
       border-radius: 8px;
       padding: 20px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      overflow-x: auto; /* ✅ Permite scroll en tablas si la pantalla es pequeña */
     }
-    /* Estilo para el menú lateral */
-    .sidebar { min-width: 200px; height: 100vh; background: #f8f9fa; border-right: 1px solid #dee2e6; }
-    .nav-link { cursor: pointer; color: #333; }
-    .nav-link:hover { background: #e9ecef; }
+    .sidebar { 
+      min-width: 240px; 
+      height: 100vh; 
+      background: #f8f9fa; 
+      border-right: 1px solid #dee2e6; 
+    }
+    .nav-link { cursor: pointer; color: #333; transition: 0.2s; }
+    .nav-link:hover { background: #e9ecef; color: #0d6efd; }
+    .nav-link.active { background: #0d6efd; color: white !important; }
   </style>
 </head>
 
@@ -31,10 +37,17 @@
   <div id="login-section" class="vh-100 d-flex align-items-center justify-content-center bg-login">
     <div class="card shadow p-4" style="width: 380px;">
       <h4 class="text-center mb-3">Acceso al Sistema</h4>
+      <p class="text-center text-muted small">Proyecto Final 2026</p>
       <form id="form-login">
-        <input id="login-cedula" class="form-control mb-3" placeholder="Cédula" required>
-        <input id="login-clave" type="password" class="form-control mb-3" placeholder="Contraseña" required>
-        <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+        <div class="mb-3">
+          <label class="form-label small">Cédula</label>
+          <input id="login-cedula" class="form-control" placeholder="Ingrese su cédula" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Contraseña</label>
+          <input id="login-clave" type="password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Ingresar al Dashboard</button>
       </form>
     </div>
   </div>
@@ -42,76 +55,87 @@
   <div id="dashboard-section" class="oculto d-flex">
     
     <div class="sidebar p-3 d-flex flex-column">
-      <h5 class="mb-4 text-primary">Menú</h5>
+      <h5 class="mb-4 text-primary fw-bold text-center">PANEL ACADÉMICO</h5>
       <ul class="nav flex-column mb-auto">
         <li class="nav-item mb-2">
           <a class="nav-link p-2 rounded" onclick="mostrarPanel('usuarios')">
-            <i class="bi bi-people me-2"></i>Usuarios
+            <i class="bi bi-people-fill me-2"></i> Usuarios
           </a>
         </li>
         <li class="nav-item mb-2">
           <a class="nav-link p-2 rounded" onclick="mostrarPanel('materias')">
-            <i class="bi bi-book me-2"></i>Materias
+            <i class="bi bi-book-half me-2"></i> Materias
           </a>
         </li>
         <li class="nav-item mb-2">
           <a class="nav-link p-2 rounded" onclick="mostrarPanel('estudiantes')">
-            <i class="bi bi-mortarboard me-2"></i>Estudiantes
+            <i class="bi bi-mortarboard-fill me-2"></i> Estudiantes
           </a>
         </li>
         <li class="nav-item mb-2">
           <a class="nav-link p-2 rounded" onclick="mostrarPanel('notas')">
-            <i class="bi bi-journal-check me-2"></i>Notas
+            <i class="bi bi-journal-check me-2"></i> Notas
           </a>
         </li>
       </ul>
       <hr>
-      <button id="btn-logout" class="btn btn-danger btn-sm w-100">Cerrar sesión</button>
+      <div class="text-center mb-3">
+        <span class="text-muted d-block small">Conectado como:</span>
+        <span id="usuario-logueado" class="fw-bold text-dark"></span>
+      </div>
+      <button id="btn-logout" class="btn btn-outline-danger btn-sm w-100">
+        <i class="bi bi-box-arrow-left me-1"></i> Cerrar sesión
+      </button>
     </div>
 
-    <div class="flex-grow-1 p-4 bg-light">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 id="titulo-seccion">Panel de Control</h2>
-        <span class="text-muted small">Usuario: <span id="usuario-logueado" class="fw-bold"></span></span>
+    <div class="flex-grow-1 p-4 bg-light" style="min-height: 100vh;">
+      <div class="mb-4">
+        <h2 id="titulo-seccion" class="fw-bold">Panel de Control</h2>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item active">Sistema</li>
+            <li class="breadcrumb-item active" aria-current="page">Gestión</li>
+          </ol>
+        </nav>
       </div>
 
       <div id="panel-usuarios" class="table-container fade-in">
-        <div class="d-flex justify-content-between mb-3">
-            <h5>Lista de Usuarios</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5><i class="bi bi-people me-2"></i>Lista de Usuarios</h5>
         </div>
-        <table class="table table-hover">
+        <table class="table table-hover align-middle">
           <thead class="table-dark">
-            <tr><th>ID</th><th>Cédula</th><th>Nombre</th><th>Acciones</th></tr>
+            <tr><th>ID</th><th>Cédula</th><th>Nombre Completo</th><th class="text-center">Acciones</th></tr>
           </thead>
           <tbody id="tabla-usuarios-body"></tbody>
         </table>
       </div>
 
       <div id="panel-materias" class="table-container oculto fade-in">
-        <h5>Lista de Materias</h5>
-        <table class="table table-hover">
-          <thead class="table-info">
-            <tr><th>ID</th><th>Materia</th><th>Descripción</th></tr>
+        <h5><i class="bi bi-book me-2"></i>Lista de Materias</h5>
+        <table class="table table-hover align-middle">
+          <thead class="table-primary">
+            <tr><th>ID</th><th>Código</th><th>Nombre de Materia</th></tr>
           </thead>
           <tbody id="tabla-materias-body"></tbody>
         </table>
       </div>
 
       <div id="panel-estudiantes" class="table-container oculto fade-in">
-        <h5>Lista de Estudiantes</h5>
-        <table class="table table-hover">
+        <h5><i class="bi bi-mortarboard me-2"></i>Directorio de Estudiantes</h5>
+        <table class="table table-hover align-middle">
           <thead class="table-success">
-            <tr><th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Correo</th></tr>
+            <tr><th>ID</th><th>Cédula</th><th>Nombre Completo</th></tr>
           </thead>
           <tbody id="tabla-estudiantes-body"></tbody>
         </table>
       </div>
 
       <div id="panel-notas" class="table-container oculto fade-in">
-        <h5>Registro de Calificaciones</h5>
-        <table class="table table-hover">
+        <h5><i class="bi bi-journal-check me-2"></i>Registro de Calificaciones</h5>
+        <table class="table table-hover align-middle">
           <thead class="table-warning">
-            <tr><th>Estudiante</th><th>Materia</th><th>Nota</th></tr>
+            <tr><th>ID</th><th>Estudiante</th><th>Materia</th><th>Nota</th></tr>
           </thead>
           <tbody id="tabla-notas-body"></tbody>
         </table>
