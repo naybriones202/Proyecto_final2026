@@ -9,10 +9,10 @@ const app = express()
 // ✅ CONFIGURACIÓN DE CORS MEJORADA
 // Permitimos que el frontend envíe JSON y acceda a los recursos
 app.use(cors({
-  origin: '*', // En producción, puedes cambiar '*' por la URL de tu frontend de Render
+  origin: '*', // Permite peticiones desde cualquier lugar (incluyendo tu local y Render)
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}))
+}));
 
 app.use(express.json())
 
