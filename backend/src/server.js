@@ -42,7 +42,6 @@ app.post('/api/login', async (req,res) => {
     const match = await bcrypt.compare(clave, usuario.clave);
     if (!match) return res.status(401).json({ msg: 'Contraseña incorrecta' });
 
-    // ✅ Login exitoso
     res.json({ 
       usuario: { id: usuario.id, nombre: usuario.nombre, cedula: usuario.cedula },
       msg: 'Login exitoso'
@@ -68,7 +67,6 @@ app.post('/api/usuarios', async (req,res) => {
     const { cedula, nombre, clave } = req.body;
     if (!cedula || !nombre || !clave) return res.status(400).json({ msg: 'Datos incompletos' });
 
-    // Encriptar clave
     const hash = await bcrypt.hash(clave, 10);
     const result = await pool.query(
       'INSERT INTO usuarios (cedula, nombre, clave) VALUES ($1, $2, $3) RETURNING id, cedula, nombre',
@@ -150,10 +148,14 @@ app.get('/api/notas', async (req,res) => {
 });
 
 // ==========================================
-// 🔹 Cualquier otra ruta -> index.html
+// 🔹 Catch-all seguro -> index.html
 // ==========================================
-app.get('*', (req,res) => {
-  res.sendFile(path.join(__dirname, 'dist/index.html'));
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, 'dist/index.html'));
+  } else {
+    next();
+  }
 });
 
 // ==========================================
