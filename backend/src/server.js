@@ -6,34 +6,33 @@ import { pool } from './db.js'
 
 const app = express()
 
-// ✅ Configuración de CORS para evitar bloqueos
+// CORS
 app.use(cors({
-  origin: '*', 
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type']
 }))
 
 app.use(express.json())
 
-// ✅ Ruta de verificación para Render
+// Ruta de verificación
 app.get('/', (req, res) => {
   res.json({ status: 'API Funcionando 🚀', proyecto: 'Proyecto Final 2026' })
 })
 
-// ==========================================
-// 🔐 SECCIÓN: USUARIOS Y LOGIN
-// ==========================================
-
+// ======================
+// LOGIN
+// ======================
 app.post('/login', async (req, res) => {
   try {
     const { cedula, clave } = req.body
-    const result = await pool.query('SELECT * FROM usuarios WHERE cedula = $1', [cedula])
+    if (!cedula || !clave) return res.status(400).json({ msg: 'Cédula y clave requeridas' })
 
+    const result = await pool.query('SELECT * FROM usuarios WHERE cedula = $1', [cedula])
     if (result.rows.length === 0) return res.status(401).json({ msg: 'Usuario no encontrado' })
 
     const usuario = result.rows[0]
     const match = await bcrypt.compare(clave, usuario.clave)
-
     if (!match) return res.status(401).json({ msg: 'Contraseña incorrecta' })
 
     res.json({ usuario: { id: usuario.id, nombre: usuario.nombre, cedula: usuario.cedula } })
@@ -42,9 +41,14 @@ app.post('/login', async (req, res) => {
   }
 })
 
+// ======================
+// USUARIOS CRUD
+// ======================
 app.post('/usuarios', async (req, res) => {
   try {
     const { cedula, nombre, clave } = req.body
+    if (!cedula || !nombre || !clave) return res.status(400).json({ msg: 'Datos incompletos' })
+
     const hash = await bcrypt.hash(clave, 10)
     const result = await pool.query(
       'INSERT INTO usuarios (cedula, nombre, clave) VALUES ($1, $2, $3) RETURNING id, cedula, nombre',
@@ -66,46 +70,47 @@ app.delete('/usuarios/:id', async (req, res) => {
   res.json({ msg: 'Usuario eliminado' })
 })
 
-// ==========================================
-// 📚 SECCIÓN: MATERIAS
-// ==========================================
-
+// ======================
+// MATERIAS CRUD
+// ======================
 app.get('/materias', async (req, res) => {
   const result = await pool.query('SELECT * FROM materias ORDER BY nombre ASC')
   res.json(result.rows)
 })
 
-// Ejemplo de ajuste en server.js para la nueva tabla materias
 app.post('/materias', async (req, res) => {
-  const { codigo, nombre } = req.body; // Asegúrate de recibir 'codigo'
+  const { codigo, nombre } = req.body
+  if (!codigo || !nombre) return res.status(400).json({ msg: 'Datos incompletos' })
+
   const result = await pool.query(
     'INSERT INTO materias (codigo, nombre) VALUES ($1, $2) RETURNING *',
     [codigo, nombre]
-  );
-  res.json(result.rows[0]);
-});
-// ==========================================
-// 🎓 SECCIÓN: ESTUDIANTES
-// ==========================================
+  )
+  res.json(result.rows[0])
+})
 
+// ======================
+// ESTUDIANTES CRUD
+// ======================
 app.get('/estudiantes', async (req, res) => {
-  const result = await pool.query('SELECT * FROM estudiantes ORDER BY apellido ASC')
+  const result = await pool.query('SELECT * FROM estudiantes ORDER BY nombre ASC')
   res.json(result.rows)
 })
 
 app.post('/estudiantes', async (req, res) => {
-  const { cedula, nombre} = req.body
+  const { cedula, nombre } = req.body
+  if (!cedula || !nombre) return res.status(400).json({ msg: 'Datos incompletos' })
+
   const result = await pool.query(
-    'INSERT INTO estudiantes (cedula, nombre) VALUES ($1, $2, $3, $4) RETURNING *',
+    'INSERT INTO estudiantes (cedula, nombre) VALUES ($1, $2) RETURNING *',
     [cedula, nombre]
   )
   res.json(result.rows[0])
 })
 
-// ==========================================
-// 📝 SECCIÓN: NOTAS (Relacional)
-// ==========================================
-
+// ======================
+// NOTAS
+// ======================
 app.get('/notas', async (req, res) => {
   const query = `
     SELECT n.id, e.nombre as estudiante, m.nombre as materia, n.nota
@@ -117,10 +122,20 @@ app.get('/notas', async (req, res) => {
   res.json(result.rows)
 })
 
-// ==========================================
-// 🚀 INICIO DEL SERVIDOR
-// ==========================================
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`)
+app.post('/notas', async (req, res) => {
+  const { estudiante_id, materia_id, nota } = req.body
+  if (!estudiante_id || !materia_id || nota == null) return res.status(400).json({ msg: 'Datos incompletos' })
+
+  const result = await pool.query(
+    'INSERT INTO notas (estudiante_id, materia_id, nota) VALUES ($1, $2, $3) RETURNING *',
+    [estudiante_id, materia_id, nota]
+  )
+  res.json(result.rows[0])
 })
+
+// ======================
+// INICIO DEL SERVIDOR
+// ======================
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`))
+
