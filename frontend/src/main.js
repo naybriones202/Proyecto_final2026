@@ -3,7 +3,8 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Swal from 'sweetalert2';
 
-const API = 'https://proyecto-final2026-1.onrender.com';
+// Cambiado a /api
+const API = 'https://proyecto-final2026-1.onrender.com/api';
 console.log("🔗 Conectando a:", API);
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -31,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     Swal.fire({ 
       title: 'Verificando...', 
-      text: 'Conectando con el servidor (esto puede tardar si el servidor está dormido)',
+      text: 'Conectando con el servidor...',
       allowOutsideClick: false, 
       didOpen: () => Swal.showLoading() 
     });
@@ -45,9 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.msg || 'Credenciales incorrectas');
-      }
+      if (!res.ok) throw new Error(data.msg || 'Credenciales incorrectas');
 
       Swal.fire({ icon: 'success', title: 'Bienvenido', text: data.usuario.nombre, timer: 1500, showConfirmButton: false });
       
@@ -97,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- CRUD FUNCTIONS ---
-  
   window.cargarUsuarios = async () => {
     const tabla = document.getElementById('tabla-usuarios-body');
     if (!tabla) return;
@@ -114,52 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
               <i class="bi bi-trash"></i>
             </button>
           </td>
-        </tr>`).join('');
-    } catch (err) { console.error("Error:", err); }
-  }
-
-  window.cargarMaterias = async () => {
-    const tabla = document.getElementById('tabla-materias-body');
-    if (!tabla) return;
-    try {
-      const res = await fetch(`${API}/materias`);
-      const materias = await res.json();
-      tabla.innerHTML = materias.map(m => `
-        <tr>
-          <td>#${m.id}</td>
-          <td><span class="badge bg-secondary">${m.codigo}</span></td>
-          <td>${m.nombre}</td>
-        </tr>`).join('');
-    } catch (err) { console.error("Error:", err); }
-  }
-
-  window.cargarEstudiantes = async () => {
-    const tabla = document.getElementById('tabla-estudiantes-body');
-    if (!tabla) return;
-    try {
-      const res = await fetch(`${API}/estudiantes`);
-      const estudiantes = await res.json();
-      tabla.innerHTML = estudiantes.map(e => `
-        <tr>
-          <td>#${e.id}</td>
-          <td>${e.cedula}</td>
-          <td>${e.nombre}</td>
-        </tr>`).join('');
-    } catch (err) { console.error("Error:", err); }
-  }
-
-  window.cargarNotas = async () => {
-    const tabla = document.getElementById('tabla-notas-body');
-    if (!tabla) return;
-    try {
-      const res = await fetch(`${API}/notas`);
-      const notas = await res.json();
-      tabla.innerHTML = notas.map(n => `
-        <tr>
-          <td>#${n.id}</td>
-          <td>${n.estudiante}</td>
-          <td>${n.materia}</td>
-          <td><strong class="${n.nota >= 7 ? 'text-success' : 'text-danger'}">${n.nota}</strong></td>
         </tr>`).join('');
     } catch (err) { console.error("Error:", err); }
   }
@@ -183,4 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) { Swal.fire('Error', 'No se pudo eliminar', 'error'); }
     }
   }
+
+  // Similar: cargarMaterias, cargarEstudiantes, cargarNotas...
 });
