@@ -7,12 +7,10 @@ import { fileURLToPath } from 'url';
 import { pool } from './db.js';
 
 const app = express();
-
-// 🔹 __dirname para ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Configuración CORS
+// ===== CORS =====
 app.use(cors({
   origin: '*',
   methods: ['GET','POST','PUT','DELETE'],
@@ -21,14 +19,10 @@ app.use(cors({
 
 app.use(express.json());
 
-// 🔹 Servir frontend
-app.use(express.static(path.join(__dirname, 'dist'))); // 'dist' si usas Vite
+// ===== Servir frontend =====
+app.use(express.static(path.join(__dirname, 'dist'))); // Ajustar si usas otro build
 
-// ======================
-// 🔹 RUTAS API
-// ======================
-
-// Ruta de salud
+// ===== Ruta de salud =====
 app.get('/api', (req,res) => {
   res.json({ status: 'API Online 🚀', database: 'Conectada ✅' });
 });
@@ -48,7 +42,11 @@ app.post('/api/login', async (req,res) => {
     const match = await bcrypt.compare(clave, usuario.clave);
     if (!match) return res.status(401).json({ msg: 'Contraseña incorrecta' });
 
-    res.json({ usuario: { id: usuario.id, nombre: usuario.nombre, cedula: usuario.cedula } });
+    // ✅ Login exitoso
+    res.json({ 
+      usuario: { id: usuario.id, nombre: usuario.nombre, cedula: usuario.cedula },
+      msg: 'Login exitoso'
+    });
   } catch (err) {
     console.error('Error login:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -56,7 +54,7 @@ app.post('/api/login', async (req,res) => {
 });
 
 // ==========================================
-// 👥 USUARIOS CRUD
+// 👥 CRUD USUARIOS
 // ==========================================
 app.get('/api/usuarios', async (req,res) => {
   try {
@@ -70,6 +68,7 @@ app.post('/api/usuarios', async (req,res) => {
     const { cedula, nombre, clave } = req.body;
     if (!cedula || !nombre || !clave) return res.status(400).json({ msg: 'Datos incompletos' });
 
+    // Encriptar clave
     const hash = await bcrypt.hash(clave, 10);
     const result = await pool.query(
       'INSERT INTO usuarios (cedula, nombre, clave) VALUES ($1, $2, $3) RETURNING id, cedula, nombre',
@@ -88,7 +87,7 @@ app.delete('/api/usuarios/:id', async (req,res) => {
 });
 
 // ==========================================
-// 📚 MATERIAS CRUD
+// 📚 CRUD MATERIAS
 // ==========================================
 app.get('/api/materias', async (req,res) => {
   try {
@@ -111,7 +110,7 @@ app.post('/api/materias', async (req,res) => {
 });
 
 // ==========================================
-// 🎓 ESTUDIANTES CRUD
+// 🎓 CRUD ESTUDIANTES
 // ==========================================
 app.get('/api/estudiantes', async (req,res) => {
   try {
@@ -134,7 +133,7 @@ app.post('/api/estudiantes', async (req,res) => {
 });
 
 // ==========================================
-// 📝 NOTAS CRUD
+// 📝 CRUD NOTAS
 // ==========================================
 app.get('/api/notas', async (req,res) => {
   try {
@@ -151,7 +150,7 @@ app.get('/api/notas', async (req,res) => {
 });
 
 // ==========================================
-// 🔹 CUALQUIER OTRA RUTA -> FRONTEND
+// 🔹 Cualquier otra ruta -> index.html
 // ==========================================
 app.get('*', (req,res) => {
   res.sendFile(path.join(__dirname, 'dist/index.html'));
