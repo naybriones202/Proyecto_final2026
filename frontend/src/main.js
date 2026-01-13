@@ -3,7 +3,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Swal from 'sweetalert2';
 
-const API = 'https://proyecto-final2026.onrender.com';
+const API = 'https://proyecto-final2026-1.onrender.com';
 console.log("🔗 Conectando a:", API);
 
 document.addEventListener("DOMContentLoaded", () => {
