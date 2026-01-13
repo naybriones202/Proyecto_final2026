@@ -4,11 +4,9 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Swal from 'sweetalert2';
 
 // Cambia la línea 10 de tu main.js por esto solo para probar:
-const API = import.meta.env.VITE_API_URL || 'https://proyecto-final2026.onrender.com';
-
-if (!API) {
-    console.error("❌ Error: VITE_API_URL no definida.");
-}
+// Reemplaza las líneas 7-12 por esto:
+const API = 'https://proyecto-final2026.onrender.com';
+console.log("🔗 Conectando a:", API);
 
 document.addEventListener("DOMContentLoaded", () => {
     const loginSection = document.getElementById('login-section');
