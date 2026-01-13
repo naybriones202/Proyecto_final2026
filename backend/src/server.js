@@ -94,10 +94,10 @@ app.get('/estudiantes', async (req, res) => {
 })
 
 app.post('/estudiantes', async (req, res) => {
-  const { cedula, nombre, apellido, correo } = req.body
+  const { cedula, nombre} = req.body
   const result = await pool.query(
-    'INSERT INTO estudiantes (cedula, nombre, apellido, correo) VALUES ($1, $2, $3, $4) RETURNING *',
-    [cedula, nombre, apellido, correo]
+    'INSERT INTO estudiantes (cedula, nombre) VALUES ($1, $2, $3, $4) RETURNING *',
+    [cedula, nombre]
   )
   res.json(result.rows[0])
 })
