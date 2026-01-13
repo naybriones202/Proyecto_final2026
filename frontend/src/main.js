@@ -3,7 +3,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Swal from 'sweetalert2';
 
-// Cambiado a /api
+// API apuntando a /api
 const API = 'https://proyecto-final2026-1.onrender.com/api';
 console.log("🔗 Conectando a:", API);
 
@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     try {
+      // ✅ Endpoint correcto: /api/login
       const res = await fetch(`${API}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,6 +117,52 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) { console.error("Error:", err); }
   }
 
+  window.cargarMaterias = async () => {
+    const tabla = document.getElementById('tabla-materias-body');
+    if (!tabla) return;
+    try {
+      const res = await fetch(`${API}/materias`);
+      const materias = await res.json();
+      tabla.innerHTML = materias.map(m => `
+        <tr>
+          <td>#${m.id}</td>
+          <td><span class="badge bg-secondary">${m.codigo}</span></td>
+          <td>${m.nombre}</td>
+        </tr>`).join('');
+    } catch (err) { console.error("Error:", err); }
+  }
+
+  window.cargarEstudiantes = async () => {
+    const tabla = document.getElementById('tabla-estudiantes-body');
+    if (!tabla) return;
+    try {
+      const res = await fetch(`${API}/estudiantes`);
+      const estudiantes = await res.json();
+      tabla.innerHTML = estudiantes.map(e => `
+        <tr>
+          <td>#${e.id}</td>
+          <td>${e.cedula}</td>
+          <td>${e.nombre}</td>
+        </tr>`).join('');
+    } catch (err) { console.error("Error:", err); }
+  }
+
+  window.cargarNotas = async () => {
+    const tabla = document.getElementById('tabla-notas-body');
+    if (!tabla) return;
+    try {
+      const res = await fetch(`${API}/notas`);
+      const notas = await res.json();
+      tabla.innerHTML = notas.map(n => `
+        <tr>
+          <td>#${n.id}</td>
+          <td>${n.estudiante}</td>
+          <td>${n.materia}</td>
+          <td><strong class="${n.nota >= 7 ? 'text-success' : 'text-danger'}">${n.nota}</strong></td>
+        </tr>`).join('');
+    } catch (err) { console.error("Error:", err); }
+  }
+
   window.borrarUsuario = async (id) => {
     const result = await Swal.fire({
       title: '¿Estás seguro?',
@@ -135,6 +182,4 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) { Swal.fire('Error', 'No se pudo eliminar', 'error'); }
     }
   }
-
-  // Similar: cargarMaterias, cargarEstudiantes, cargarNotas...
 });
